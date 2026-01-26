@@ -15,3 +15,5 @@ nohup.out
 .idea
 inference/
 test.py
+paddleclas.egg-info
+*.pdparams
