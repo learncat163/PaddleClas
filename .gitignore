@@ -17,3 +17,10 @@ inference/
 test.py
 paddleclas.egg-info
 *.pdparams
+/.github/copilot-instructions.md
+/.github/prompts/*
+assets/*
+dataset/whole_chain_little_train/*
+*.tar
+dataset/ILSVRC2012
+dataset/ILSVRC2012/**

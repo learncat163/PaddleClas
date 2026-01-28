@@ -837,6 +837,8 @@ def _load_pretrained(pretrained, model, model_url, use_ssld=False):
 
 
 def efficientvit_b0(pretrained=False, use_ssld=False, **kwargs):
+    if 'class_num' in kwargs:
+        kwargs['num_classes'] = kwargs.pop('class_num')
     model_args = dict(
         widths=(8, 16, 32, 64, 128),
         depths=(1, 2, 2, 2, 2),
@@ -851,6 +853,8 @@ def efficientvit_b0(pretrained=False, use_ssld=False, **kwargs):
 
 
 def efficientvit_b1(pretrained=False, use_ssld=False, **kwargs):
+    if 'class_num' in kwargs:
+        kwargs['num_classes'] = kwargs.pop('class_num')
     model_args = dict(
         widths=(16, 32, 64, 128, 256),
         depths=(1, 2, 3, 3, 4),
@@ -865,6 +869,8 @@ def efficientvit_b1(pretrained=False, use_ssld=False, **kwargs):
 
 
 def efficientvit_b2(pretrained=False, use_ssld=False, **kwargs):
+    if 'class_num' in kwargs:
+        kwargs['num_classes'] = kwargs.pop('class_num')
     model_args = dict(
         widths=(24, 48, 96, 192, 384),
         depths=(1, 3, 4, 4, 6),
@@ -879,6 +885,8 @@ def efficientvit_b2(pretrained=False, use_ssld=False, **kwargs):
 
 
 def efficientvit_b3(pretrained=False, use_ssld=False, **kwargs):
+    if 'class_num' in kwargs:
+        kwargs['num_classes'] = kwargs.pop('class_num')
     model_args = dict(
         widths=(32, 64, 128, 256, 512),
         depths=(1, 4, 6, 6, 9),
@@ -893,6 +901,8 @@ def efficientvit_b3(pretrained=False, use_ssld=False, **kwargs):
 
 
 def efficientvit_l1(pretrained=False, use_ssld=False, **kwargs):
+    if 'class_num' in kwargs:
+        kwargs['num_classes'] = kwargs.pop('class_num')
     model_args = dict(
         widths=(32, 64, 128, 256, 512),
         depths=(1, 1, 1, 6, 6),
@@ -907,6 +917,8 @@ def efficientvit_l1(pretrained=False, use_ssld=False, **kwargs):
 
 
 def efficientvit_l2(pretrained=False, use_ssld=False, **kwargs):
+    if 'class_num' in kwargs:
+        kwargs['num_classes'] = kwargs.pop('class_num')
     model_args = dict(
         widths=(32, 64, 128, 256, 512),
         depths=(1, 2, 2, 8, 8),
@@ -921,6 +933,8 @@ def efficientvit_l2(pretrained=False, use_ssld=False, **kwargs):
 
 
 def efficientvit_l3(pretrained=False, use_ssld=False, **kwargs):
+    if 'class_num' in kwargs:
+        kwargs['num_classes'] = kwargs.pop('class_num')
     model_args = dict(
         widths=(64, 128, 256, 512, 1024),
         depths=(1, 2, 2, 8, 8),

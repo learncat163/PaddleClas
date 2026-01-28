@@ -13,5 +13,5 @@
 # limitations under the License.
 
 __all__ = ['PaddleClas']
-from .paddleclas_main import PaddleClas
+from .paddleclas import PaddleClas
 from .ppcls.arch.backbone import *
