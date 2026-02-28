@@ -9,7 +9,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import numpy as np
 import paddle
-import torch
 import torchvision.transforms.functional as TF
 from PIL import Image
 from ppcls.arch.backbone.model_zoo.dinov3 import DINOv3_vits16, DINOv3_vitb16, DINOv3_vitl16
@@ -99,7 +98,7 @@ def test_model(model_class, model_name, pdparams_path, inputs):
 
 def main():
     # 1. 加载图片
-    image_path = "/home/cao/code/self/paddle/dinov3/000000039769.jpg"
+    image_path = "docs/images/inference_deployment/whl_demo.jpg"
     image = load_image(image_path)
 
     # 2. 预处理

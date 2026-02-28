@@ -1,5 +1,4 @@
 import math
-import os
 from functools import lru_cache
 
 import numpy as np
@@ -10,11 +9,9 @@ from paddle.nn.initializer import TruncatedNormal, Constant, Normal
 from ....utils.save_load import load_dygraph_pretrain
 
 MODEL_URLS = {
-    "DINOv3_vits16": "https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/DINOv3_vits16",
-    "DINOv3_vits14": "",
-    "DINOv3_vitb16": "",
-    "DINOv3_vitb14": "",
-    "DINOv3_vitg14": "",
+    "DINOv3_vits16": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/dinov3-vits16.pdparams",
+    "DINOv3_vitb16": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/dinov3-vitb16.pdparams",
+    "DINOv3_vitl16": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/dinov3-vitl16.pdparams"
 }
 
 __all__ = list(MODEL_URLS.keys())
@@ -512,24 +509,6 @@ def DINOv3_vits16(pretrained=False, use_ssld=False, **kwargs):
     return model
 
 
-def DINOv3_vits14(pretrained=False, use_ssld=False, **kwargs):
-    model = DINOv3ViTModel(
-        img_size=518,
-        patch_size=14,
-        embed_dim=384,
-        depth=12,
-        num_heads=6,
-        mlp_ratio=4,
-        qkv_bias=True,
-        drop_path_rate=0.0,
-        **kwargs)
-    _load_pretrained(
-        pretrained,
-        model,
-        MODEL_URLS["DINOv3_vits14"],
-        use_ssld=use_ssld)
-    return model
-
 
 def DINOv3_vitb16(pretrained=False, use_ssld=False, **kwargs):
     model = DINOv3ViTModel(
@@ -549,45 +528,6 @@ def DINOv3_vitb16(pretrained=False, use_ssld=False, **kwargs):
         pretrained,
         model,
         MODEL_URLS["DINOv3_vitb16"],
-        use_ssld=use_ssld)
-    return model
-
-
-def DINOv3_vitb14(pretrained=False, use_ssld=False, **kwargs):
-    model = DINOv3ViTModel(
-        img_size=518,
-        patch_size=14,
-        embed_dim=768,
-        depth=12,
-        num_heads=12,
-        mlp_ratio=4,
-        qkv_bias=True,
-        drop_path_rate=0.0,
-        **kwargs)
-    _load_pretrained(
-        pretrained,
-        model,
-        MODEL_URLS["DINOv3_vitb14"],
-        use_ssld=use_ssld)
-    return model
-
-
-def DINOv3_vitg14(pretrained=False, use_ssld=False, **kwargs):
-    model = DINOv3ViTModel(
-        img_size=518,
-        patch_size=14,
-        embed_dim=1536,
-        depth=40,
-        num_heads=24,
-        mlp_ratio=4,
-        qkv_bias=True,
-        drop_path_rate=0.0,
-        use_gated_mlp=True,
-        **kwargs)
-    _load_pretrained(
-        pretrained,
-        model,
-        MODEL_URLS["DINOv3_vitg14"],
         use_ssld=use_ssld)
     return model
 

@@ -1,8 +1,13 @@
+"""
+在项目的根目录运行脚本
+
+"""
+
 import torch
 from transformers import AutoImageProcessor, AutoModel
 from transformers.image_utils import load_image
 
-url = "/home/cao/code/self/paddle/dinov3/000000039769.jpg"
+url = "docs/images/inference_deployment/whl_demo.jpg"
 image = load_image(url)
 
 
@@ -23,8 +28,5 @@ def print_model_output(model_path, input_image, print_banner):
 
 
 print_model_output("/home/cao/llm/facebook/dinov3-vits16-pretrain-lvd1689m/", image, "vits16")
-
 print_model_output("/home/cao/llm/facebook/dinov3-vitb16-pretrain-lvd1689m/", image, "vitb16")
-
-
 print_model_output("/home/cao/llm/facebook/dinov3-vitl16-pretrain-lvd1689m/", image, "vitl16")
