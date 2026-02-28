@@ -35,14 +35,6 @@ AMP:
 Arch:
   name: DINOv3_vitb16
   class_num: 1000
-  # DINOv3 specific parameters
-  img_size: 224
-  patch_size: 16
-  embed_dim: 768
-  depth: 12
-  num_heads: 12
-  mlp_ratio: 4
-  drop_path_rate: 0.0
 
 # loss function config for training/eval process
 Loss:
@@ -58,15 +50,8 @@ Optimizer:
   name: AdamW
   weight_decay: 0.05
   lr:
-    name: CosineAnnealingDecay
+    name: Cosine
     learning_rate: 0.005
-    eta_min: 1e-6
-  beta1: 0.9
-  beta2: 0.999
-  grad_clip:
-    name: ClipGradByGlobalNorm
-    p: 2
-    max_norm: 1.0
 
 
 # data loader for train and eval

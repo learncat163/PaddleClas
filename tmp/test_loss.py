@@ -1,7 +1,7 @@
 """
 精度测试脚本，需要同时安装paddleclas和 torch 和 transformers，测试环境如下：
 1. 最新的 paddleclas 的develop分支 + 当前的PR合并请求
-2. paddlepaddle==2.6.2
+2. paddlepaddle-gpu==3.3.0
 3. numpy==1.24.4
 4. torch==2.9.0+cu130
 5. torchvision==0.24.0+cu130

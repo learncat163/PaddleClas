@@ -1,76 +1,62 @@
 ===========================train_params===========================
 model_name:DINOv3_vits16
 python:python3
-gpu_list:0|0,1
-# DINOv3 是预训练模型，仅用于推理，不进行训练
+gpu_list:0
 -o Global.device:gpu
 -o Global.auto_cast:null
--o Global.epochs:null
--o Global.output_dir:null
--o DataLoader.Train.sampler.batch_size:null
+-o Global.epochs:lite_train_lite_infer=1|whole_train_whole_infer=120
+-o Global.output_dir:./output/
+-o DataLoader.Train.sampler.batch_size:4
 -o Global.pretrained_model:null
-train_model_name:null
-train_infer_img_dir:null
+train_model_name:latest
+train_infer_img_dir:./dataset/ILSVRC2012/val
 null:null
 ##
-trainer:null_train
-norm_train:null
+trainer:norm_train
+norm_train:tools/train.py -c ppcls/configs/ImageNet/DINOv3/DINOv3_vits16_patch16_224.yaml -o Global.seed=1234 -o DataLoader.Train.sampler.shuffle=False -o DataLoader.Train.loader.num_workers=0 -o DataLoader.Train.loader.use_shared_memory=False -o Global.eval_during_train=False -o Global.save_interval=1
 pact_train:null
 fpgm_train:null
 distill_train:null
-to_static_train:null
+to_static_train:-o Global.to_static=True
 null:null
 ##
 ===========================eval_params===========================
-eval:null
+eval:tools/eval.py -c ppcls/configs/ImageNet/DINOv3/DINOv3_vits16_patch16_224.yaml
 null:null
 ##
 ===========================infer_params==========================
-# DINOv3 纯推理模式配置
 -o Global.save_inference_dir:./inference
 -o Global.pretrained_model:
-norm_export:null
+norm_export:tools/export_model.py -c ppcls/configs/ImageNet/DINOv3/DINOv3_vits16_patch16_224.yaml
 quant_export:null
 fpgm_export:null
 distill_export:null
 kl_quant:null
 export2:null
-# 预训练权重 URL（本地或远程）
-pretrained_model_url:/tmp/dinov3-vits16.pdparams
-# 推理模型路径（使用预训练权重直接推理）
-infer_model:/tmp/dinov3-vits16.pdparams
-infer_export:False
+pretrained_model_url:https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/dinov3-vits16.pdparams
+infer_model:../inference/
+infer_export:True
 infer_quant:False
 inference:python/predict_cls.py -c configs/inference_cls.yaml
-# 推理参数
 -o Global.use_gpu:True|False
 -o Global.enable_mkldnn:False
 -o Global.cpu_num_threads:1
 -o Global.batch_size:1
 -o Global.use_tensorrt:False
 -o Global.use_fp16:False
--o Global.inference_model_dir:/tmp/dinov3-vits16.pdparams
--o Global.infer_imgs:../dataset/ILSVRC2012/val/ILSVRC2012_val_00000001.JPEG
+-o Global.inference_model_dir:../inference
+-o Global.infer_imgs:docs/images/inference_deployment/whl_demo.jpg
 -o Global.save_log_path:null
 -o Global.benchmark:False
 null:null
 null:null
 ===========================train_benchmark_params==========================
-batch_size:null
-fp_items:null
-epoch:null
-model_type:null
-num_workers:null
---profiler_options:null
-flags:null
+batch_size:64
+fp_items:fp32|fp16
+epoch:1
+model_type:norm_train|to_static_train
+num_workers:4
+--profiler_options:batch_range=[10,20];state=GPU;tracer_option=Default;profile_path=model.profile
+flags:FLAGS_eager_delete_tensor_gb=0.0;FLAGS_fraction_of_gpu_memory_to_use=0.98;FLAGS_conv_workspace_size_limit=4096
 ===========================infer_benchmark_params==========================
 random_infer_input:[{float32,[3,224,224]}]
-===========================hf_precision_params===========================
-# HuggingFace 精度对比参数 (用于 compare_hf_precision.py)
-# DINOv3 是预训练模型，通过与 HF 原始模型对比验证精度
-hf_model_path:/home/cao/llm/facebook/dinov3-vits16-pretrain-lvd1689m/
-hf_precision_atol:1e-5
-hf_precision_rtol:1e-5
-test_image_path:/home/cao/code/self/paddle/dinov3/000000039769.jpg
-# 模型类型说明: inference_only (仅推理)
-model_type:inference_only
