@@ -1,0 +1,28 @@
+# DINOv3 HuggingFace 精度对比配置
+# 用于验证 PaddleClas DINOv3 与 HF 原始模型的输出一致性
+
+===========================model_info===========================
+model_name:DINOv3_vits16
+model_type:inference_only
+description:DINOv3 Small (patch 16) - 仅推理预训练模型
+===========================hf_params===========================
+# HuggingFace 模型配置
+hf_model_path:/home/cao/llm/facebook/dinov3-vits16-pretrain-lvd1689m/
+hf_model_name:facebook/dinov3-vits16
+===========================paddle_params===========================
+# PaddleClas 模型配置
+paddle_model_class:ppcls.arch.backbone.model_zoo.dinov3.DINOv3_vits16
+pdparams_path:/tmp/dinov3-vits16.pdparams
+===========================test_params===========================
+# 测试配置
+test_image_path:/home/cao/code/self/paddle/dinov3/000000039769.jpg
+# 精度阈值
+atol:1e-5
+rtol:1e-5
+# 输出维度验证
+expected_output_dim:384
+===========================inference_config===========================
+# 推理配置
+image_size:224
+use_gpu:True
+batch_size:1

@@ -59,3 +59,67 @@
 - **解决方案**: 在权重转换时对 Linear 层权重进行转置
 
 
+---
+
+# DINOv3 自动化配置任务（2026-02-28）
+
+## ✅ 已完成
+
+### 阶段 1：训练配置文件
+- [x] `ppcls/configs/ImageNet/DINOv3/DINOv3_vits16_patch16_224.yaml`
+- [x] `ppcls/configs/ImageNet/DINOv3/DINOv3_vitb16_patch16_224.yaml`
+- [x] `ppcls/configs/ImageNet/DINOv3/DINOv3_vitl16_patch16_224.yaml`
+
+### 阶段 2：TIPC 测试配置
+- [x] `test_tipc/configs/DINOv3/DINOv3_vits16_train_infer_python.txt`
+- [x] `test_tipc/configs/DINOv3/DINOv3_vitb16_train_infer_python.txt`
+- [x] `test_tipc/configs/DINOv3/DINOv3_vitl16_train_infer_python.txt`
+- [x] `test_tipc/configs/DINOv3/DINOv3_vits16_hf_precision.txt`
+- [x] `test_tipc/configs/DINOv3/DINOv3_vitb16_hf_precision.txt`
+- [x] `test_tipc/configs/DINOv3/DINOv3_vitl16_hf_precision.txt`
+
+**注意**：推理使用现有的 `deploy/configs/inference_cls.yaml`，不需要单独创建
+
+### 阶段 3：运行测试验证（待执行）
+- [ ] 快速推理验证
+- [ ] 导出推理模型
+- [ ] TIPC 自动化测试
+
+## 测试命令
+
+### 快速推理验证
+```bash
+# Small 模型
+python tools/infer.py \
+  -c ppcls/configs/ImageNet/DINOv3/DINOv3_vits16_patch16_224.yaml \
+  -o Global.pretrained_model=/tmp/dinov3-vits16.pdparams \
+  -o Infer.infer_imgs=docs/images/inference_deployment/whl_demo.jpg
+
+# Base 模型
+python tools/infer.py \
+  -c ppcls/configs/ImageNet/DINOv3/DINOv3_vitb16_patch16_224.yaml \
+  -o Global.pretrained_model=/tmp/dinov3-vitb16.pdparams \
+  -o Infer.infer_imgs=docs/images/inference_deployment/whl_demo.jpg
+
+# Large 模型
+python tools/infer.py \
+  -c ppcls/configs/ImageNet/DINOv3/DINOv3_vitl16_patch16_224.yaml \
+  -o Global.pretrained_model=/tmp/dinov3-vitl16.pdparams \
+  -o Infer.infer_imgs=docs/images/inference_deployment/whl_demo.jpg
+```
+
+### 导出推理模型
+```bash
+# 导出
+python tools/export_model.py \
+  -c ppcls/configs/ImageNet/DINOv3/DINOv3_vits16_patch16_224.yaml \
+  -o Global.pretrained_model=/tmp/dinov3-vits16.pdparams \
+  -o Global.save_inference_dir=./inference/dinov3_vits16
+
+# 推理（使用标准 inference_cls.yaml）
+python deploy/python/predict_cls.py \
+  -c deploy/configs/inference_cls.yaml \
+  -o Global.inference_model_dir=./inference/dinov3_vits16 \
+  -o Global.infer_imgs=docs/images/inference_deployment/whl_demo.jpg
+```
+

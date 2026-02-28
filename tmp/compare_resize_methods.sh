@@ -1,0 +1,16 @@
+#!/bin/bash
+echo "=========================================="
+echo "对比 PIL resize vs Torch antialias=True"
+echo "=========================================="
+echo ""
+echo "使用 PIL resize 的精度:"
+echo "  ❌ DINOv3_vits16: max_diff = 8.44e-03"
+echo "  ❌ DINOv3_vitb16: max_diff = 1.76e-02"
+echo "  ❌ DINOv3_vitl16: max_diff = 1.83e-02"
+echo ""
+echo "预处理差异: 1.63e-02"
+echo ""
+echo "----------------------------------------"
+echo ""
+echo "之前使用 Torch TF.resize(antialias=True) 的结果 (从 git log 查找):"
+git log --oneline --all -20 | head -5
