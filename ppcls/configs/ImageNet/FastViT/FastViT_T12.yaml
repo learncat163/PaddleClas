@@ -7,7 +7,7 @@ Global:
   pretrained_model: null
   output_dir: ./output/FastViT_T12
   device: gpu
-  save_interval: 1
+  save_interval: 1000
   eval_during_train: True
   eval_interval: 1
   epochs: 300
@@ -29,7 +29,7 @@ AMP:
 # model architecture
 Arch:
   name: FastViT_T12
-  class_num: 1000
+  num_classes: 1000
  
 # loss function config for traing/eval process
 Loss:
@@ -101,7 +101,7 @@ DataLoader:
             resize_short: 298
             interpolation: bicubic
             backend: pil
-        - CenterCropImage:
+        - CenterCrop:
             size: 256
         - NormalizeImage:
             scale: 1.0/255.0
@@ -128,7 +128,7 @@ Infer:
         resize_short: 298
         interpolation: bicubic
         backend: pil
-    - CenterCropImage:
+    - CenterCrop:
         size: 256
     - NormalizeImage:
         scale: 1.0/255.0
