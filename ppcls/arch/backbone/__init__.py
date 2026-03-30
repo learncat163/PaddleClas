@@ -19,7 +19,6 @@ from .legendary_models.mobilenet_v1 import MobileNetV1_x0_25, MobileNetV1_x0_5, 
 from .legendary_models.mobilenet_v3 import MobileNetV3_small_x0_35, MobileNetV3_small_x0_5, MobileNetV3_small_x0_75, MobileNetV3_small_x1_0, MobileNetV3_small_x1_25, MobileNetV3_large_x0_35, MobileNetV3_large_x0_5, MobileNetV3_large_x0_75, MobileNetV3_large_x1_0, MobileNetV3_large_x1_25
 from .legendary_models.mobilenet_v4 import MobileNetV4_conv_small, MobileNetV4_conv_medium, MobileNetV4_conv_large, MobileNetV4_hybrid_medium, MobileNetV4_hybrid_large
 from .model_zoo.fasternet import FasterNet_T0, FasterNet_T1, FasterNet_T2, FasterNet_S, FasterNet_M, FasterNet_L
-from .model_zoo.fastvit import FastViT_T8, FastViT_T12, FastViT_SA12, FastViT_SA24, FastViT_SA36, FastViT_MA36
 from .model_zoo.starnet import StarNet_S1, StarNet_S2, StarNet_S3, StarNet_S4
 from .legendary_models.resnet import ResNet18, ResNet18_vd, ResNet34, ResNet34_vd, ResNet50, ResNet50_vd, ResNet101, ResNet101_vd, ResNet152, ResNet152_vd, ResNet200_vd
 from .legendary_models.vgg import VGG11, VGG13, VGG16, VGG19
@@ -101,6 +100,7 @@ from .variant_models.swin_transformer_variant import SwinTransformer_tiny_patch4
 from .model_zoo.adaface_ir_net import AdaFace_IR_18, AdaFace_IR_34, AdaFace_IR_50, AdaFace_IR_101, AdaFace_IR_152, AdaFace_IR_SE_50, AdaFace_IR_SE_101, AdaFace_IR_SE_152, AdaFace_IR_SE_200
 from .model_zoo.wideresnet import WideResNet
 from .model_zoo.uniformer import UniFormer_small, UniFormer_small_plus, UniFormer_small_plus_dim64, UniFormer_base, UniFormer_base_ls
+from .model_zoo.fastvit import FastViT_T8, FastViT_T12, FastViT_SA12, FastViT_SA24, FastViT_SA36, FastViT_MA36
 
 
 # help whl get all the models' api (class type) and components' api (func type)

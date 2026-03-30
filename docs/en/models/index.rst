@@ -13,7 +13,6 @@ models
    Others_en.md
    SEResNext_and_Res2Net_en.md
    ESNet_en.md
-   FastViT_en.md
    HRNet_en.md
    ReXNet_en.md
    Inception_en.md
@@ -29,3 +28,4 @@ models
    MixNet_en.md
    Twins_en.md
    PVTV2_en.md
+   FastViT_en.md
