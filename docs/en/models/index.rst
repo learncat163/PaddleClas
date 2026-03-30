@@ -13,6 +13,7 @@ models
    Others_en.md
    SEResNext_and_Res2Net_en.md
    ESNet_en.md
+   FastViT_en.md
    HRNet_en.md
    ReXNet_en.md
    Inception_en.md

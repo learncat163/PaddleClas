@@ -9,9 +9,8 @@ Usage:
     python tools/fastvit_weight_convert.py --model fastvit_t8 --output_dir ./pretrained/FastViT
 """
 
-import os
 import argparse
-import numpy as np
+import os
 
 try:
     import torch
@@ -92,8 +91,8 @@ def convert_weight_value(torch_value, key, original_key):
 
     # Only transpose Linear/FC layers, NOT Conv2D layers
     # In FastViT, mlp.fc1 and mlp.fc2 are Conv2D layers (kernel_size=1)
-    # Only head.fc is a true Linear layer
-    if any(x in original_key for x in ['head.fc', 'classifier.fc']):
+    # Only head.fc and token_mixer.qkv are true Linear layers
+    if any(x in original_key for x in ['head.fc', 'classifier.fc', 'token_mixer.qkv']):
         # Linear layers: PyTorch (out, in) -> Paddle (in, out)
         numpy_value = numpy_value.T
 

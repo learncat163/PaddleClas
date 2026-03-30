@@ -728,6 +728,23 @@ DeiT（Data-efficient Image Transformers）系列模型的精度、速度指标�
 
 **注**：TNT 模型的数据预处理部分 `NormalizeImage` 中的 `mean` 与 `std` 均为 0.5。
 
+<a name="FastViT"></a>
+
+## FastViT 系列 <sup>[[49](#ref49)]</sup>
+
+关于 FastViT 系列模型的精度、速度指标如下表所示，更多介绍可以参考：[FastViT 系列模型文档](FastViT.md)。
+
+| 模型       | Top-1 Acc | Top-5 Acc | Reference<br>Top-1 Acc | Reference<br>Top-5 Acc | FLOPs(M) | Params(M) | 预训练模型下载地址                                               | inference模型下载地址                                      |
+| ---------- | --------- | --------- | ----------------------- | ----------------------- | --------- | ---------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| FastViT_T8   | 0.7598 | 0.9269 | 0.766 | 0.929 | 305  | 7.8 | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/FastViT_T8_pretrained.pdparams) | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/inference/FastViT_T8_infer.tar) |
+| FastViT_T12  | 0.7810 | 0.9371 | 0.786 | 0.940 | 406  | 9.2 | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/FastViT_T12_pretrained.pdparams) | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/inference/FastViT_T12_infer.tar) |
+| FastViT_SA12 | 0.7934 | 0.9446 | 0.800 | 0.947 | 658  | 11   | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/FastViT_SA12_pretrained.pdparams) | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/inference/FastViT_SA12_infer.tar) |
+| FastViT_SA24 | 0.8085 | 0.9551 | 0.816 | 0.960 | 1120 | 19   | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/FastViT_SA24_pretrained.pdparams) | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/inference/FastViT_SA24_infer.tar) |
+| FastViT_SA36 | 0.8191 | 0.9551 | 0.826 | 0.960 | 2353 | 39   | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/FastViT_SA36_pretrained.pdparams) | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/inference/FastViT_SA36_infer.tar) |
+| FastViT_MA36 | 0.8247 | 0.9551 | 0.831 | 0.960 | 2353 | 39   | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/FastViT_MA36_pretrained.pdparams) | [下载链接](https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/inference/FastViT_MA36_infer.tar) |
+
+**注**：与 Reference 的精度差异源于数据预处理不同。
+
 <a name="Transformer_lite"></a>
 
 ### 4.2 轻量级模型
