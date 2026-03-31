@@ -15,16 +15,23 @@
 # Code was based on https://github.com/apple/ml-fastvit
 # reference: https://arxiv.org/abs/2303.14189
 
+from functools import partial
+from typing import List, Optional, Tuple, Type, Union
+
 import numpy as np
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
-from functools import partial
-from typing import List, Optional, Tuple, Type, Union
 
 from ....utils.save_load import load_dygraph_pretrain
 
 MODEL_URLS = {
+    "FastViT_T8": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/FastViT_T8.pdparams",
+    "FastViT_T12": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/FastViT_T12.pdparams",
+    "FastViT_SA12": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/FastViT_SA12.pdparams",
+    "FastViT_SA24": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/FastViT_SA24.pdparams",
+    "FastViT_SA36": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/FastViT_SA36.pdparams",
+    "FastViT_MA36": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/FastViT_MA36.pdparams"
 }
 
 __all__ = ["FastViT_T8", "FastViT_T12", "FastViT_SA12", "FastViT_SA24", "FastViT_SA36", "FastViT_MA36"]
@@ -73,7 +80,7 @@ class DropPath(nn.Layer):
         if self.drop_prob == 0. or not self.training:
             return x
         keep_prob = 1 - self.drop_prob
-        shape = (x.shape[0], ) + (1, ) * (len(x.shape) - 1)
+        shape = (x.shape[0],) + (1,) * (len(x.shape) - 1)
         random_tensor = keep_prob + paddle.rand(shape, dtype=x.dtype)
         random_tensor = paddle.floor(random_tensor)
         return x.divide(paddle.to_tensor(keep_prob, dtype=x.dtype)) * random_tensor
@@ -643,16 +650,16 @@ class RepMixer(nn.Layer):
 
         if isinstance(self.layer_scale, LayerScale2d):
             w = self.mixer.id_tensor + self.layer_scale.gamma.unsqueeze(0) * (
-                self.mixer.reparam_conv.weight - self.norm.reparam_conv.weight
+                    self.mixer.reparam_conv.weight - self.norm.reparam_conv.weight
             )
             b = paddle.squeeze(self.layer_scale.gamma) * (
-                self.mixer.reparam_conv.bias - self.norm.reparam_conv.bias
+                    self.mixer.reparam_conv.bias - self.norm.reparam_conv.bias
             )
         else:
             w = (
-                self.mixer.id_tensor
-                + self.mixer.reparam_conv.weight
-                - self.norm.reparam_conv.weight
+                    self.mixer.id_tensor
+                    + self.mixer.reparam_conv.weight
+                    - self.norm.reparam_conv.weight
             )
             b = self.mixer.reparam_conv.bias - self.norm.reparam_conv.bias
 
