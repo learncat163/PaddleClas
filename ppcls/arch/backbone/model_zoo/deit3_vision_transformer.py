@@ -23,10 +23,59 @@ import paddle.nn as nn
 from paddle.nn.initializer import Constant
 
 from .vision_transformer import (
-    VisionTransformer, Attention, Mlp,
+    VisionTransformer, Attention as BaseAttention, Mlp as BaseMlp,
     Identity, trunc_normal_, zeros_, DropPath
 )
 from ....utils.save_load import load_dygraph_pretrain
+
+
+class Mlp(BaseMlp):
+    """DeiT3 MLP with bias support"""
+    def __init__(self,
+                 in_features,
+                 hidden_features=None,
+                 out_features=None,
+                 act_layer=nn.GELU,
+                 drop=0.,
+                 bias=True):
+        # Call parent __init__ without bias
+        super().__init__(
+            in_features=in_features,
+            hidden_features=hidden_features,
+            out_features=out_features,
+            act_layer=act_layer,
+            drop=drop
+        )
+        # If bias is True, recreate fc layers with bias
+        if bias:
+            out_features = out_features or in_features
+            hidden_features = hidden_features or in_features
+            self.fc1 = nn.Linear(in_features, hidden_features, bias_attr=True)
+            self.fc2 = nn.Linear(hidden_features, out_features, bias_attr=True)
+
+
+class Attention(BaseAttention):
+    """DeiT3 Attention with proj_bias support"""
+    def __init__(self,
+                 dim,
+                 num_heads=8,
+                 qkv_bias=False,
+                 qk_scale=None,
+                 attn_drop=0.,
+                 proj_drop=0.,
+                 proj_bias=False):
+        # Call parent __init__ without proj_bias
+        super().__init__(
+            dim=dim,
+            num_heads=num_heads,
+            qkv_bias=qkv_bias,
+            qk_scale=qk_scale,
+            attn_drop=attn_drop,
+            proj_drop=proj_drop
+        )
+        # If proj_bias is True, recreate proj layer with bias
+        if proj_bias:
+            self.proj = nn.Linear(dim, dim, bias_attr=True)
 
 
 class LayerScale(nn.Layer):
