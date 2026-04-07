@@ -23,10 +23,9 @@ import paddle.nn as nn
 from paddle.nn.initializer import Constant
 
 from .vision_transformer import (
-    VisionTransformer, PatchEmbed, Attention, Mlp,
-    Identity, trunc_normal_, zeros_, DropPath, to_2tuple
+    VisionTransformer, Attention, Mlp,
+    Identity, trunc_normal_, zeros_, DropPath
 )
-
 from ....utils.save_load import load_dygraph_pretrain
 
 
@@ -65,7 +64,7 @@ class DeiT3Block(nn.Layer):
         else:
             raise TypeError(
                 "The norm_layer must be str or paddle.nn.layer.Layer class")
-        
+
         self.attn = Attention(
             dim,
             num_heads=num_heads,
@@ -74,10 +73,10 @@ class DeiT3Block(nn.Layer):
             attn_drop=attn_drop,
             proj_drop=drop,
             proj_bias=True)
-        
+
         self.ls1 = LayerScale(dim, init_values) if init_values else Identity()
         self.drop_path1 = DropPath(drop_path) if drop_path > 0. else Identity()
-        
+
         if isinstance(norm_layer, str):
             self.norm2 = eval(norm_layer)(dim, epsilon=epsilon)
         elif isinstance(norm_layer, Callable):
@@ -85,14 +84,14 @@ class DeiT3Block(nn.Layer):
         else:
             raise TypeError(
                 "The norm_layer must be str or paddle.nn.layer.Layer class")
-        
+
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = Mlp(in_features=dim,
                        hidden_features=mlp_hidden_dim,
                        act_layer=act_layer,
                        drop=drop,
                        bias=True)
-        
+
         self.ls2 = LayerScale(dim, init_values) if init_values else Identity()
         self.drop_path2 = DropPath(drop_path) if drop_path > 0. else Identity()
 
@@ -122,56 +121,56 @@ class DeiT3VisionTransformer(VisionTransformer):
                  no_embed_class=False,
                  init_values=None,
                  **kwargs):
-       super().__init__(
-           img_size=img_size,
-           patch_size=patch_size,
-           in_chans=in_chans,
-           class_num=class_num,
-           embed_dim=embed_dim,
-           depth=depth,
-           num_heads=num_heads,
-           mlp_ratio=mlp_ratio,
-           qkv_bias=qkv_bias,
-           qk_scale=qk_scale,
-           drop_rate=drop_rate,
-           attn_drop_rate=attn_drop_rate,
-           drop_path_rate=drop_path_rate,
-           norm_layer=norm_layer,
-           epsilon=epsilon,
-           **kwargs)
-       
-       self.no_embed_class = no_embed_class
-       
-       if no_embed_class:
-           self.pos_embed = self.create_parameter(
-               shape=(1, self.patch_embed.num_patches, self.embed_dim),
-               default_initializer=zeros_)
-           self.add_parameter("pos_embed", self.pos_embed)
-       
-       dpr = np.linspace(0, drop_path_rate, depth)
-       self.blocks = nn.LayerList([
-           DeiT3Block(
-               dim=embed_dim,
-               num_heads=num_heads,
-               mlp_ratio=mlp_ratio,
-               qkv_bias=qkv_bias,
-               qk_scale=qk_scale,
-               drop=drop_rate,
-               attn_drop=attn_drop_rate,
-               drop_path=dpr[i],
-               norm_layer=norm_layer,
-               epsilon=epsilon,
-               init_values=init_values
-           ) for i in range(depth)
-       ])
-       
-       trunc_normal_(self.pos_embed)
-       self.apply(self._init_weights)
-    
+        super().__init__(
+            img_size=img_size,
+            patch_size=patch_size,
+            in_chans=in_chans,
+            class_num=class_num,
+            embed_dim=embed_dim,
+            depth=depth,
+            num_heads=num_heads,
+            mlp_ratio=mlp_ratio,
+            qkv_bias=qkv_bias,
+            qk_scale=qk_scale,
+            drop_rate=drop_rate,
+            attn_drop_rate=attn_drop_rate,
+            drop_path_rate=drop_path_rate,
+            norm_layer=norm_layer,
+            epsilon=epsilon,
+            **kwargs)
+
+        self.no_embed_class = no_embed_class
+
+        if no_embed_class:
+            self.pos_embed = self.create_parameter(
+                shape=(1, self.patch_embed.num_patches, self.embed_dim),
+                default_initializer=zeros_)
+            self.add_parameter("pos_embed", self.pos_embed)
+
+        dpr = np.linspace(0, drop_path_rate, depth)
+        self.blocks = nn.LayerList([
+            DeiT3Block(
+                dim=embed_dim,
+                num_heads=num_heads,
+                mlp_ratio=mlp_ratio,
+                qkv_bias=qkv_bias,
+                qk_scale=qk_scale,
+                drop=drop_rate,
+                attn_drop=attn_drop_rate,
+                drop_path=dpr[i],
+                norm_layer=norm_layer,
+                epsilon=epsilon,
+                init_values=init_values
+            ) for i in range(depth)
+        ])
+
+        trunc_normal_(self.pos_embed)
+        self.apply(self._init_weights)
+
     def forward_features(self, x):
         B = x.shape[0]
         x = self.patch_embed(x)
-        
+
         if self.no_embed_class:
             x = x + self.pos_embed
             cls_tokens = self.cls_token.expand((B, -1, -1)).astype(x.dtype)
@@ -180,7 +179,7 @@ class DeiT3VisionTransformer(VisionTransformer):
             cls_tokens = self.cls_token.expand((B, -1, -1)).astype(x.dtype)
             x = paddle.concat((cls_tokens, x), axis=1)
             x = x + self.pos_embed
-        
+
         x = self.pos_drop(x)
         for blk in self.blocks:
             x = blk(x)
