@@ -94,16 +94,15 @@ class Mlp(nn.Layer):
                  hidden_features=None,
                  out_features=None,
                  act_layer=nn.GELU,
-                 drop=0.,
-                 bias=True):
+                 drop=0.):
         super().__init__()
         out_features = out_features or in_features
         hidden_features = hidden_features or in_features
-        self.fc1 = nn.Linear(in_features, hidden_features, bias_attr=bias)
+        self.fc1 = nn.Linear(in_features, hidden_features)
         self.act = act_layer()
-        self.fc2 = nn.Linear(hidden_features, out_features, bias_attr=bias)
+        self.fc2 = nn.Linear(hidden_features, out_features)
         self.drop = nn.Dropout(drop)
- 
+
     def forward(self, x):
         x = self.fc1(x)
         x = self.act(x)
@@ -120,16 +119,15 @@ class Attention(nn.Layer):
                  qkv_bias=False,
                  qk_scale=None,
                  attn_drop=0.,
-                 proj_drop=0.,
-                 proj_bias=True):
+                 proj_drop=0.):
         super().__init__()
         self.num_heads = num_heads
         head_dim = dim // num_heads
         self.scale = qk_scale or head_dim**-0.5
- 
+
         self.qkv = nn.Linear(dim, dim * 3, bias_attr=qkv_bias)
         self.attn_drop = nn.Dropout(attn_drop)
-        self.proj = nn.Linear(dim, dim, bias_attr=proj_bias)
+        self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
     def forward(self, x):
