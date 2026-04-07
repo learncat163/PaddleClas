@@ -236,16 +236,16 @@ class DeiT3VisionTransformer(VisionTransformer):
         return x[:, 0]
 
 
-# Model configuration URLs (placeholder, to be updated with actual URLs)
+
 MODEL_URLS = {
-    "DeiT3_small_patch16_224": "",
-    "DeiT3_base_patch16_384": "",
-    "DeiT3_small_patch16_384": "",
-    "DeiT3_large_patch16_384": "",
-    "DeiT3_base_patch16_224": "",
-    "DeiT3_huge_patch14_224": "",
-    "DeiT3_medium_patch16_224": "",
-    "DeiT3_large_patch16_224": "",
+    "DeiT3_small_patch16_224": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/deit3_small_patch16_224.fb_in1k.pdparams",
+    "DeiT3_base_patch16_384": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/deit3_base_patch16_384.fb_in1k.pdparams",
+    "DeiT3_small_patch16_384": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/deit3_small_patch16_384.fb_in1k.pdparams",
+    "DeiT3_large_patch16_384": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/deit3_large_patch16_384.fb_in1k.pdparams",
+    "DeiT3_base_patch16_224": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/deit3_base_patch16_224.fb_in1k.pdparams",
+    "DeiT3_huge_patch14_224": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/deit3_huge_patch14_224.fb_in1k.pdparams",
+    "DeiT3_medium_patch16_224": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/deit3_medium_patch16_224.fb_in1k.pdparams",
+    "DeiT3_large_patch16_224": "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/deit3_large_patch16_224.fb_in1k.pdparams",
 }
 
 __all__ = list(MODEL_URLS.keys())
