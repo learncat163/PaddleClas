@@ -16,13 +16,13 @@ import operator
 from collections import OrderedDict
 from dataclasses import dataclass
 from functools import partial, reduce
-from typing import Any, List, Optional, Tuple, Type, Union
+from typing import List, Optional, Tuple, Type, Union
 
-import numpy as np
 import paddle
 import paddle.nn as nn
-from paddle.nn.initializer import TruncatedNormal, Constant
+from paddle.nn.initializer import TruncatedNormal
 
+from .vision_transformer import zeros_, ones_, DropPath, Identity, Mlp
 from ....utils.save_load import load_dygraph_pretrain
 
 __all__ = [
@@ -30,84 +30,18 @@ __all__ = [
     'MViTv2_small_cls', 'MViTv2_base_cls', 'MViTv2_large_cls', 'MViTv2_huge_cls'
 ]
 
-trunc_normal_ = TruncatedNormal(std=.02)
-zeros_ = Constant(value=0.)
-ones_ = Constant(value=1.)
-
 
 def to_2tuple(x):
-    """Convert to 2-tuple."""
     if isinstance(x, (tuple, list)):
         return tuple(x)
     return (x, x)
 
 
 def prod(iterable):
-    """Product of all elements in iterable."""
     return reduce(operator.mul, iterable, 1)
 
 
-def drop_path(x, drop_prob=0., training=False):
-    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    if drop_prob == 0. or not training:
-        return x
-    keep_prob = paddle.full(shape=[], fill_value=1 - drop_prob, dtype=x.dtype)
-    shape = (x.shape[0], ) + (1, ) * (x.ndim - 1)
-    random_tensor = keep_prob + paddle.rand(shape).astype(x.dtype)
-    random_tensor = paddle.floor(random_tensor)  # binarize
-    output = x.divide(keep_prob) * random_tensor
-    return output
-
-
-class DropPath(nn.Layer):
-    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-
-    def __init__(self, drop_prob=None):
-        super(DropPath, self).__init__()
-        self.drop_prob = drop_prob
-
-    def forward(self, x):
-        return drop_path(x, self.drop_prob, self.training)
-
-
-class Identity(nn.Layer):
-    """Identity layer."""
-
-    def __init__(self):
-        super(Identity, self).__init__()
-
-    def forward(self, input):
-        return input
-
-
-class Mlp(nn.Layer):
-    """MLP layer."""
-
-    def __init__(self,
-                 in_features,
-                 hidden_features=None,
-                 out_features=None,
-                 act_layer=nn.GELU,
-                 drop=0.):
-        super().__init__()
-        out_features = out_features or in_features
-        hidden_features = hidden_features or in_features
-        self.fc1 = nn.Linear(in_features, hidden_features)
-        self.act = act_layer()
-        self.fc2 = nn.Linear(hidden_features, out_features)
-        self.drop = nn.Dropout(drop)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.act(x)
-        x = self.drop(x)
-        x = self.fc2(x)
-        x = self.drop(x)
-        return x
-
-
 def get_norm_layer(norm_layer='layernorm'):
-    """Get normalization layer."""
     if norm_layer == 'layernorm':
         return nn.LayerNorm
     elif norm_layer == 'batchnorm':
@@ -117,39 +51,25 @@ def get_norm_layer(norm_layer='layernorm'):
 
 
 def calculate_drop_path_rates(drop_path_rate, depths, stagewise=True):
-    """Calculate drop path rates for each block."""
-    num_stages = len(depths)
-    dpr = []
+    total = sum(depths)
+    flat = [drop_path_rate * i / (total - 1) for i in range(total)] if total > 1 else [0.0] * total
     if stagewise:
-        for i, depth in enumerate(depths):
-            stage_dpr = [drop_path_rate * (i + sum(depths[:i]) + j) / sum(depths)
-                        for j in range(depth)]
-            dpr.append(stage_dpr)
+        dpr = []
+        start = 0
+        for depth in depths:
+            dpr.append(flat[start:start + depth])
+            start += depth
     else:
-        num_layers = sum(depths)
-        dpr = [drop_path_rate * i / num_layers for i in range(num_layers)]
+        dpr = flat
     return dpr
 
 
 def trunc_normal_tf_(tensor, std=0.02):
-    """Truncated normal initialization (TensorFlow style)."""
-    # Paddle doesn't support in-place initialization like PyTorch
-    # Use numpy to generate truncated normal values
-    import numpy as np
-    from paddle.nn.initializer import TruncatedNormal as TruncNormalInit
-    initializer = TruncNormalInit(std=std)
-    # Generate values using numpy
-    np.random.seed(0)
-    values = np.random.normal(0, std, tensor.shape)
-    # Truncate values to 2 standard deviations
-    values = np.clip(values, -2 * std, 2 * std)
-    # Convert to paddle tensor and assign
-    tensor.set_value(paddle.to_tensor(values, dtype=tensor.dtype))
+    TruncatedNormal(std=std)(tensor)
 
 
 @dataclass
 class MultiScaleVitCfg:
-    """Configuration for MultiScale Vision Transformer."""
     depths: Tuple[int, ...] = (2, 3, 16, 3)
     embed_dim: Union[int, Tuple[int, ...]] = 96
     num_heads: Union[int, Tuple[int, ...]] = 1
@@ -168,19 +88,17 @@ class MultiScaleVitCfg:
     patch_kernel: Tuple[int, int] = (7, 7)
     patch_stride: Tuple[int, int] = (4, 4)
     patch_padding: Tuple[int, int] = (3, 3)
-    pool_type: str = 'max'
     rel_pos_type: str = 'spatial'
-    act_layer: Union[str, Tuple[str, str]] = 'gelu'
     norm_layer: Union[str, Tuple[str, str]] = 'layernorm'
     norm_eps: float = 1e-06
 
     def __post_init__(self):
         num_stages = len(self.depths)
         if not isinstance(self.embed_dim, (tuple, list)):
-            self.embed_dim = tuple(self.embed_dim * 2**i for i in range(num_stages))
+            self.embed_dim = tuple(self.embed_dim * 2 ** i for i in range(num_stages))
         assert len(self.embed_dim) == num_stages
         if not isinstance(self.num_heads, (tuple, list)):
-            self.num_heads = tuple(self.num_heads * 2**i for i in range(num_stages))
+            self.num_heads = tuple(self.num_heads * 2 ** i for i in range(num_stages))
         assert len(self.num_heads) == num_stages
         if self.stride_kv_adaptive is not None and self.stride_kv is None:
             _stride_kv = self.stride_kv_adaptive
@@ -196,15 +114,13 @@ class MultiScaleVitCfg:
 
 
 class PatchEmbed(nn.Layer):
-    """Patch embedding layer."""
-
     def __init__(
-        self,
-        dim_in: int = 3,
-        dim_out: int = 768,
-        kernel: Tuple[int, int] = (7, 7),
-        stride: Tuple[int, int] = (4, 4),
-        padding: Tuple[int, int] = (3, 3),
+            self,
+            dim_in: int = 3,
+            dim_out: int = 768,
+            kernel: Tuple[int, int] = (7, 7),
+            stride: Tuple[int, int] = (4, 4),
+            padding: Tuple[int, int] = (3, 3),
     ):
         super().__init__()
         self.proj = nn.Conv2D(
@@ -217,9 +133,8 @@ class PatchEmbed(nn.Layer):
 
 
 def reshape_pre_pool(
-    x, feat_size: List[int], has_cls_token: bool = True
+        x, feat_size: List[int], has_cls_token: bool = True
 ) -> Tuple[paddle.Tensor, Optional[paddle.Tensor]]:
-    """Reshape before pooling."""
     H, W = feat_size
     if has_cls_token:
         cls_tok, x = x[:, :, :1, :], x[:, :, 1:, :]
@@ -230,9 +145,8 @@ def reshape_pre_pool(
 
 
 def reshape_post_pool(
-    x, num_heads: int, cls_tok: Optional[paddle.Tensor] = None
+        x, num_heads: int, cls_tok: Optional[paddle.Tensor] = None
 ) -> Tuple[paddle.Tensor, List[int]]:
-    """Reshape after pooling."""
     feat_size = [x.shape[2], x.shape[3]]
     L_pooled = x.shape[2] * x.shape[3]
     x = x.reshape([-1, num_heads, x.shape[1], L_pooled]).transpose([0, 1, 3, 2])
@@ -242,32 +156,29 @@ def reshape_post_pool(
 
 
 def cal_rel_pos_type(
-    attn: paddle.Tensor,
-    q: paddle.Tensor,
-    has_cls_token: bool,
-    q_size: List[int],
-    k_size: List[int],
-    rel_pos_h: paddle.Tensor,
-    rel_pos_w: paddle.Tensor,
+        attn: paddle.Tensor,
+        q: paddle.Tensor,
+        has_cls_token: bool,
+        q_size: List[int],
+        k_size: List[int],
+        rel_pos_h: paddle.Tensor,
+        rel_pos_w: paddle.Tensor,
 ):
-    """
-    Spatial Relative Positional Embeddings.
-    """
     sp_idx = 1 if has_cls_token else 0
     q_h, q_w = q_size
     k_h, k_w = k_size
     q_h_ratio = max(k_h / q_h, 1.0)
     k_h_ratio = max(q_h / k_h, 1.0)
     dist_h = (
-        paddle.arange(q_h).unsqueeze(-1) * q_h_ratio
-        - paddle.arange(k_h).unsqueeze(0) * k_h_ratio
+            paddle.arange(q_h).unsqueeze(-1) * q_h_ratio
+            - paddle.arange(k_h).unsqueeze(0) * k_h_ratio
     )
     dist_h += (k_h - 1) * k_h_ratio
     q_w_ratio = max(k_w / q_w, 1.0)
     k_w_ratio = max(q_w / k_w, 1.0)
     dist_w = (
-        paddle.arange(q_w).unsqueeze(-1) * q_w_ratio
-        - paddle.arange(k_w).unsqueeze(0) * k_w_ratio
+            paddle.arange(q_w).unsqueeze(-1) * q_w_ratio
+            - paddle.arange(k_w).unsqueeze(0) * k_w_ratio
     )
     dist_w += (k_w - 1) * k_w_ratio
     rel_h = rel_pos_h[dist_h.astype('int64')]
@@ -277,38 +188,36 @@ def cal_rel_pos_type(
     rel_h = paddle.einsum("byhwc,hkc->byhwk", r_q, rel_h)
     rel_w = paddle.einsum("byhwc,wkc->byhwk", r_q, rel_w)
     attn[:, :, sp_idx:, sp_idx:] = (
-        attn[:, :, sp_idx:, sp_idx:].reshape([B, -1, q_h, q_w, k_h, k_w])
-        + rel_h.unsqueeze(-1)
-        + rel_w.unsqueeze(-2)
+            attn[:, :, sp_idx:, sp_idx:].reshape([B, -1, q_h, q_w, k_h, k_w])
+            + rel_h.unsqueeze(-1)
+            + rel_w.unsqueeze(-2)
     ).reshape([B, -1, q_h * q_w, k_h * k_w])
     return attn
 
 
 class MultiScaleAttentionPoolFirst(nn.Layer):
-    """Multi-scale attention with pooling first."""
-
     def __init__(
-        self,
-        dim: int,
-        dim_out: int,
-        feat_size: Tuple[int, int],
-        num_heads: int = 8,
-        qkv_bias: bool = True,
-        mode: str = "conv",
-        kernel_q: Tuple[int, int] = (1, 1),
-        kernel_kv: Tuple[int, int] = (1, 1),
-        stride_q: Tuple[int, int] = (1, 1),
-        stride_kv: Tuple[int, int] = (1, 1),
-        has_cls_token: bool = True,
-        rel_pos_type: str = "spatial",
-        residual_pooling: bool = True,
-        norm_layer: Type[nn.Layer] = nn.LayerNorm,
+            self,
+            dim: int,
+            dim_out: int,
+            feat_size: Tuple[int, int],
+            num_heads: int = 8,
+            qkv_bias: bool = True,
+            mode: str = "conv",
+            kernel_q: Tuple[int, int] = (1, 1),
+            kernel_kv: Tuple[int, int] = (1, 1),
+            stride_q: Tuple[int, int] = (1, 1),
+            stride_kv: Tuple[int, int] = (1, 1),
+            has_cls_token: bool = True,
+            rel_pos_type: str = "spatial",
+            residual_pooling: bool = True,
+            norm_layer: Type[nn.Layer] = nn.LayerNorm,
     ):
         super().__init__()
         self.num_heads = num_heads
         self.dim_out = dim_out
         self.head_dim = dim_out // num_heads
-        self.scale = self.head_dim**-0.5
+        self.scale = self.head_dim ** -0.5
         self.has_cls_token = has_cls_token
         padding_q = tuple([int(q // 2) for q in kernel_q])
         padding_kv = tuple([int(kv // 2) for kv in kernel_kv])
@@ -450,30 +359,28 @@ class MultiScaleAttentionPoolFirst(nn.Layer):
 
 
 class MultiScaleAttention(nn.Layer):
-    """Multi-scale attention."""
-
     def __init__(
-        self,
-        dim: int,
-        dim_out: int,
-        feat_size: Tuple[int, int],
-        num_heads: int = 8,
-        qkv_bias: bool = True,
-        mode: str = "conv",
-        kernel_q: Tuple[int, int] = (1, 1),
-        kernel_kv: Tuple[int, int] = (1, 1),
-        stride_q: Tuple[int, int] = (1, 1),
-        stride_kv: Tuple[int, int] = (1, 1),
-        has_cls_token: bool = True,
-        rel_pos_type: str = "spatial",
-        residual_pooling: bool = True,
-        norm_layer: Type[nn.Layer] = nn.LayerNorm,
+            self,
+            dim: int,
+            dim_out: int,
+            feat_size: Tuple[int, int],
+            num_heads: int = 8,
+            qkv_bias: bool = True,
+            mode: str = "conv",
+            kernel_q: Tuple[int, int] = (1, 1),
+            kernel_kv: Tuple[int, int] = (1, 1),
+            stride_q: Tuple[int, int] = (1, 1),
+            stride_kv: Tuple[int, int] = (1, 1),
+            has_cls_token: bool = True,
+            rel_pos_type: str = "spatial",
+            residual_pooling: bool = True,
+            norm_layer: Type[nn.Layer] = nn.LayerNorm,
     ):
         super().__init__()
         self.num_heads = num_heads
         self.dim_out = dim_out
         self.head_dim = dim_out // num_heads
-        self.scale = self.head_dim**-0.5
+        self.scale = self.head_dim ** -0.5
         self.has_cls_token = has_cls_token
         padding_q = tuple([int(q // 2) for q in kernel_q])
         padding_kv = tuple([int(kv // 2) for kv in kernel_kv])
@@ -601,28 +508,26 @@ class MultiScaleAttention(nn.Layer):
 
 
 class MultiScaleBlock(nn.Layer):
-    """Multi-scale transformer block."""
-
     def __init__(
-        self,
-        dim: int,
-        dim_out: int,
-        num_heads: int,
-        feat_size: Tuple[int, int],
-        mlp_ratio: float = 4.0,
-        qkv_bias: bool = True,
-        drop_path: float = 0.0,
-        norm_layer: Type[nn.Layer] = nn.LayerNorm,
-        kernel_q: Tuple[int, int] = (1, 1),
-        kernel_kv: Tuple[int, int] = (1, 1),
-        stride_q: Tuple[int, int] = (1, 1),
-        stride_kv: Tuple[int, int] = (1, 1),
-        mode: str = "conv",
-        has_cls_token: bool = True,
-        expand_attn: bool = False,
-        pool_first: bool = False,
-        rel_pos_type: str = "spatial",
-        residual_pooling: bool = True,
+            self,
+            dim: int,
+            dim_out: int,
+            num_heads: int,
+            feat_size: Tuple[int, int],
+            mlp_ratio: float = 4.0,
+            qkv_bias: bool = True,
+            drop_path: float = 0.0,
+            norm_layer: Type[nn.Layer] = nn.LayerNorm,
+            kernel_q: Tuple[int, int] = (1, 1),
+            kernel_kv: Tuple[int, int] = (1, 1),
+            stride_q: Tuple[int, int] = (1, 1),
+            stride_kv: Tuple[int, int] = (1, 1),
+            mode: str = "conv",
+            has_cls_token: bool = True,
+            expand_attn: bool = False,
+            pool_first: bool = False,
+            rel_pos_type: str = "spatial",
+            residual_pooling: bool = True,
     ):
         super().__init__()
         proj_needed = dim != dim_out
@@ -709,29 +614,27 @@ class MultiScaleBlock(nn.Layer):
 
 
 class MultiScaleVitStage(nn.Layer):
-    """Multi-scale vision transformer stage."""
-
     def __init__(
-        self,
-        dim: int,
-        dim_out: int,
-        depth: int,
-        num_heads: int,
-        feat_size: Tuple[int, int],
-        mlp_ratio: float = 4.0,
-        qkv_bias: bool = True,
-        kernel_q: Tuple[int, int] = (1, 1),
-        kernel_kv: Tuple[int, int] = (1, 1),
-        stride_q: Tuple[int, int] = (1, 1),
-        stride_kv: Tuple[int, int] = (1, 1),
-        mode: str = "conv",
-        has_cls_token: bool = True,
-        expand_attn: bool = False,
-        pool_first: bool = False,
-        rel_pos_type: str = "spatial",
-        residual_pooling: bool = True,
-        norm_layer: Type[nn.Layer] = nn.LayerNorm,
-        drop_path: Union[float, List[float]] = 0.0,
+            self,
+            dim: int,
+            dim_out: int,
+            depth: int,
+            num_heads: int,
+            feat_size: Tuple[int, int],
+            mlp_ratio: float = 4.0,
+            qkv_bias: bool = True,
+            kernel_q: Tuple[int, int] = (1, 1),
+            kernel_kv: Tuple[int, int] = (1, 1),
+            stride_q: Tuple[int, int] = (1, 1),
+            stride_kv: Tuple[int, int] = (1, 1),
+            mode: str = "conv",
+            has_cls_token: bool = True,
+            expand_attn: bool = False,
+            pool_first: bool = False,
+            rel_pos_type: str = "spatial",
+            residual_pooling: bool = True,
+            norm_layer: Type[nn.Layer] = nn.LayerNorm,
+            drop_path: Union[float, List[float]] = 0.0,
     ):
         super().__init__()
         self.grad_checkpointing = False
@@ -778,28 +681,16 @@ class MultiScaleVitStage(nn.Layer):
 
 
 class MultiScaleVit(nn.Layer):
-    """
-    Improved Multiscale Vision Transformers for Classification and Detection
-    Yanghao Li*, Chao-Yuan Wu*, Haoqi Fan, Karttikeya Mangalam, Bo Xiong, Jitendra Malik,
-        Christoph Feichtenhofer*
-    https://arxiv.org/abs/2112.01526
-
-    Multiscale Vision Transformers
-    Haoqi Fan*, Bo Xiong*, Karttikeya Mangalam*, Yanghao Li*, Zhicheng Yan, Jitendra Malik,
-        Christoph Feichtenhofer*
-    https://arxiv.org/abs/2104.11227
-    """
-
     def __init__(
-        self,
-        cfg: MultiScaleVitCfg,
-        img_size: Tuple[int, int] = (224, 224),
-        in_chans: int = 3,
-        global_pool: Optional[str] = None,
-        num_classes: int = 1000,
-        class_num: int = None,
-        drop_path_rate: float = 0.0,
-        drop_rate: float = 0.0,
+            self,
+            cfg: MultiScaleVitCfg,
+            img_size: Tuple[int, int] = (224, 224),
+            in_chans: int = 3,
+            global_pool: Optional[str] = None,
+            num_classes: int = 1000,
+            class_num: int = None,
+            drop_path_rate: float = 0.0,
+            drop_rate: float = 0.0,
     ):
         super().__init__()
         img_size = to_2tuple(img_size)
@@ -911,8 +802,11 @@ class MultiScaleVit(nn.Layer):
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
             trunc_normal_tf_(m.weight, std=0.02)
-            if isinstance(m, nn.Linear) and m.bias is not None:
+            if m.bias is not None:
                 zeros_(m.bias)
+        elif isinstance(m, nn.LayerNorm):
+            zeros_(m.bias)
+            ones_(m.weight)
 
     def no_weight_decay(self):
         return {
@@ -948,7 +842,7 @@ class MultiScaleVit(nn.Layer):
 
     def forward_features(self, x):
         x, feat_size = self.patch_embed(x)
-        B, N, C = x.shape
+        B, N, _ = x.shape
         if self.cls_token is not None:
             cls_tokens = self.cls_token.expand([B, -1, -1])
             x = paddle.concat([cls_tokens, x], axis=1)
@@ -962,7 +856,7 @@ class MultiScaleVit(nn.Layer):
     def forward_head(self, x, pre_logits: bool = False):
         if self.global_pool:
             if self.global_pool == "avg":
-                x = x[:, self.num_prefix_tokens :].mean(1)
+                x = x[:, self.num_prefix_tokens:].mean(1)
             else:
                 x = x[:, 0]
         return x if pre_logits else self.head(x)
@@ -973,7 +867,6 @@ class MultiScaleVit(nn.Layer):
         return x
 
 
-# Model configurations
 model_cfgs = dict(
     mvitv2_tiny=MultiScaleVitCfg(depths=(1, 2, 5, 2)),
     mvitv2_small=MultiScaleVitCfg(depths=(1, 2, 11, 2)),
@@ -1001,7 +894,6 @@ model_cfgs = dict(
 
 
 def _create_mvitv2(variant, cfg_variant=None, pretrained=False, **kwargs):
-    """Create MViTv2 model."""
     cfg = model_cfgs[variant] if not cfg_variant else model_cfgs[cfg_variant]
     model = MultiScaleVit(
         cfg=cfg,
@@ -1013,40 +905,32 @@ def _create_mvitv2(variant, cfg_variant=None, pretrained=False, **kwargs):
 
 
 def MViTv2_tiny(pretrained=False, **kwargs):
-    """MViTv2 tiny model."""
     return _create_mvitv2('mvitv2_tiny', pretrained=pretrained, **kwargs)
 
 
 def MViTv2_small(pretrained=False, **kwargs):
-    """MViTv2 small model."""
     return _create_mvitv2('mvitv2_small', pretrained=pretrained, **kwargs)
 
 
 def MViTv2_base(pretrained=False, **kwargs):
-    """MViTv2 base model."""
     return _create_mvitv2('mvitv2_base', pretrained=pretrained, **kwargs)
 
 
 def MViTv2_large(pretrained=False, **kwargs):
-    """MViTv2 large model."""
     return _create_mvitv2('mvitv2_large', pretrained=pretrained, **kwargs)
 
 
 def MViTv2_small_cls(pretrained=False, **kwargs):
-    """MViTv2 small with cls token model."""
     return _create_mvitv2('mvitv2_small_cls', pretrained=pretrained, **kwargs)
 
 
 def MViTv2_base_cls(pretrained=False, **kwargs):
-    """MViTv2 base with cls token model."""
     return _create_mvitv2('mvitv2_base_cls', pretrained=pretrained, **kwargs)
 
 
 def MViTv2_large_cls(pretrained=False, **kwargs):
-    """MViTv2 large with cls token model."""
     return _create_mvitv2('mvitv2_large_cls', pretrained=pretrained, **kwargs)
 
 
 def MViTv2_huge_cls(pretrained=False, **kwargs):
-    """MViTv2 huge with cls token model."""
     return _create_mvitv2('mvitv2_huge_cls', pretrained=pretrained, **kwargs)
