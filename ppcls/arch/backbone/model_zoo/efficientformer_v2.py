@@ -12,19 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Adapted from:
-# https://github.com/huggingface/pytorch-image-models/blob/main/timm/models/efficientformer_v2.py
-
-"""EfficientFormer-V2
-
-@article{
-    li2022rethinking,
-    title={Rethinking Vision Transformers for MobileNet Size and Speed},
-    author={Li, Yanyu and Hu, Ju and Wen, Yang and Evangelidis, Georgios and Salahi, Kamyar and Wang, Yanzhi and Tulyakov, Sergey and Ren, Jian},
-    journal={arXiv preprint arXiv:2212.08059},
-    year={2022}
-}
-"""
 import math
 from functools import partial
 from typing import Dict, List, Optional, Tuple, Type, Union
