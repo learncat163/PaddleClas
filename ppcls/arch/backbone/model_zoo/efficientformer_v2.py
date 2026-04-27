@@ -180,14 +180,9 @@ class ConvNormAct(nn.Layer):
 def create_norm_layer(norm_layer, num_channels, eps=1e-5):
     if norm_layer == "batchnorm2d":
         return nn.BatchNorm2D(num_channels, epsilon=eps)
-    elif norm_layer == "identity":
+    if norm_layer == "identity":
         return nn.Identity()
-    elif isinstance(norm_layer, partial):
-        return norm_layer(num_channels)
-    elif isinstance(norm_layer, type):
-        return norm_layer(num_channels)
-    else:
-        return norm_layer(num_channels)
+    return norm_layer(num_channels)
 
 
 class ConvNorm(nn.Layer):
@@ -206,12 +201,8 @@ class ConvNorm(nn.Layer):
     ):
         norm_kwargs = norm_kwargs or {}
         super().__init__()
-        if isinstance(padding, tuple):
+        if isinstance(padding, (tuple, int)):
             conv_padding = padding
-        elif isinstance(padding, int):
-            conv_padding = padding
-        elif padding == "":
-            conv_padding = 0
         else:
             conv_padding = 0
         self.conv = nn.Conv2D(
@@ -324,13 +315,12 @@ class Attention2d(nn.Layer):
     def get_attention_biases(self) -> paddle.Tensor:
         if self.training:
             return self.attention_biases[:, self.attention_bias_idxs]
-        else:
-            device_key = str(paddle.device.get_device())
-            if device_key not in self.attention_bias_cache:
-                self.attention_bias_cache[device_key] = self.attention_biases[
-                    :, self.attention_bias_idxs
-                ]
-            return self.attention_bias_cache[device_key]
+        device_key = str(paddle.device.get_device())
+        if device_key not in self.attention_bias_cache:
+            self.attention_bias_cache[device_key] = self.attention_biases[
+                :, self.attention_bias_idxs
+            ]
+        return self.attention_bias_cache[device_key]
 
     def forward(self, x):
         B, C, H, W = x.shape
@@ -463,13 +453,12 @@ class Attention2dDownsample(nn.Layer):
     def get_attention_biases(self) -> paddle.Tensor:
         if self.training:
             return self.attention_biases[:, self.attention_bias_idxs]
-        else:
-            device_key = str(paddle.device.get_device())
-            if device_key not in self.attention_bias_cache:
-                self.attention_bias_cache[device_key] = self.attention_biases[
-                    :, self.attention_bias_idxs
-                ]
-            return self.attention_bias_cache[device_key]
+        device_key = str(paddle.device.get_device())
+        if device_key not in self.attention_bias_cache:
+            self.attention_bias_cache[device_key] = self.attention_biases[
+                :, self.attention_bias_idxs
+            ]
+        return self.attention_bias_cache[device_key]
 
     def forward(self, x):
         B, C, H, W = x.shape
@@ -911,8 +900,8 @@ class EfficientFormerV2(nn.Layer):
 
 def _load_pretrained(pretrained, model, model_url, use_ssld=False):
     if pretrained is False:
-        pass
-    elif pretrained is True:
+        return
+    if pretrained is True:
         load_dygraph_pretrain(model, model_url, use_ssld=use_ssld)
     elif isinstance(pretrained, str):
         load_dygraph_pretrain(model, pretrained)
