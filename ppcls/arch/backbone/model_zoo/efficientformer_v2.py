@@ -20,14 +20,21 @@ import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
 
+from ....utils.save_load import load_dygraph_pretrain
 
-__all__ = [
-    "EfficientFormerV2",
-    "efficientformerv2_s0",
-    "efficientformerv2_s1",
-    "efficientformerv2_s2",
-    "efficientformerv2_l",
-]
+
+MODEL_URLS = {
+    "EfficientFormerV2_L":
+    "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/efficientformerv2_l.pdparams",
+    "EfficientFormerV2_S0":
+    "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/efficientformerv2_s0.pdparams",
+    "EfficientFormerV2_S1":
+    "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/efficientformerv2_s1.pdparams",
+    "EfficientFormerV2_S2":
+    "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/efficientformerv2_s2.pdparams",
+}
+
+__all__ = list(MODEL_URLS.keys())
 
 
 EfficientFormer_width = {
@@ -902,7 +909,20 @@ class EfficientFormerV2(nn.Layer):
         return x
 
 
-def efficientformerv2_s0(pretrained=False, **kwargs) -> EfficientFormerV2:
+def _load_pretrained(pretrained, model, model_url, use_ssld=False):
+    if pretrained is False:
+        pass
+    elif pretrained is True:
+        load_dygraph_pretrain(model, model_url, use_ssld=use_ssld)
+    elif isinstance(pretrained, str):
+        load_dygraph_pretrain(model, pretrained)
+    else:
+        raise RuntimeError(
+            "pretrained type is not available. Please use `string` or `boolean` type."
+        )
+
+
+def efficientformerv2_s0(pretrained=False, use_ssld=False, **kwargs) -> EfficientFormerV2:
     model_args = dict(
         depths=EfficientFormer_depth["S0"],
         embed_dims=EfficientFormer_width["S0"],
@@ -911,10 +931,11 @@ def efficientformerv2_s0(pretrained=False, **kwargs) -> EfficientFormerV2:
         mlp_ratios=EfficientFormer_expansion_ratios["S0"],
     )
     model = EfficientFormerV2(**dict(model_args, **kwargs))
+    _load_pretrained(pretrained, model, MODEL_URLS["EfficientFormerV2_S0"], use_ssld=use_ssld)
     return model
 
 
-def efficientformerv2_s1(pretrained=False, **kwargs) -> EfficientFormerV2:
+def efficientformerv2_s1(pretrained=False, use_ssld=False, **kwargs) -> EfficientFormerV2:
     model_args = dict(
         depths=EfficientFormer_depth["S1"],
         embed_dims=EfficientFormer_width["S1"],
@@ -923,10 +944,11 @@ def efficientformerv2_s1(pretrained=False, **kwargs) -> EfficientFormerV2:
         mlp_ratios=EfficientFormer_expansion_ratios["S1"],
     )
     model = EfficientFormerV2(**dict(model_args, **kwargs))
+    _load_pretrained(pretrained, model, MODEL_URLS["EfficientFormerV2_S1"], use_ssld=use_ssld)
     return model
 
 
-def efficientformerv2_s2(pretrained=False, **kwargs) -> EfficientFormerV2:
+def efficientformerv2_s2(pretrained=False, use_ssld=False, **kwargs) -> EfficientFormerV2:
     model_args = dict(
         depths=EfficientFormer_depth["S2"],
         embed_dims=EfficientFormer_width["S2"],
@@ -935,10 +957,11 @@ def efficientformerv2_s2(pretrained=False, **kwargs) -> EfficientFormerV2:
         mlp_ratios=EfficientFormer_expansion_ratios["S2"],
     )
     model = EfficientFormerV2(**dict(model_args, **kwargs))
+    _load_pretrained(pretrained, model, MODEL_URLS["EfficientFormerV2_S2"], use_ssld=use_ssld)
     return model
 
 
-def efficientformerv2_l(pretrained=False, **kwargs) -> EfficientFormerV2:
+def efficientformerv2_l(pretrained=False, use_ssld=False, **kwargs) -> EfficientFormerV2:
     model_args = dict(
         depths=EfficientFormer_depth["L"],
         embed_dims=EfficientFormer_width["L"],
@@ -947,4 +970,5 @@ def efficientformerv2_l(pretrained=False, **kwargs) -> EfficientFormerV2:
         mlp_ratios=EfficientFormer_expansion_ratios["L"],
     )
     model = EfficientFormerV2(**dict(model_args, **kwargs))
+    _load_pretrained(pretrained, model, MODEL_URLS["EfficientFormerV2_L"], use_ssld=use_ssld)
     return model
