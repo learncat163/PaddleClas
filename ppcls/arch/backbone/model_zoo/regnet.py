@@ -24,8 +24,8 @@ import paddle
 from paddle import ParamAttr
 import paddle.nn as nn
 import paddle.nn.functional as F
-from paddle.nn import Conv2D, BatchNorm, Linear, Dropout
-from paddle.nn import AdaptiveAvgPool2D, MaxPool2D, AvgPool2D
+from paddle.nn import Conv2D, BatchNorm, Linear
+from paddle.nn import AdaptiveAvgPool2D
 from paddle.nn.initializer import Uniform
 import math
 
@@ -171,9 +171,7 @@ class BottleneckBlock(nn.Layer):
                  name=None):
         super(BottleneckBlock, self).__init__()
 
-        # Compute the bottleneck width
         w_b = int(round(num_filters * bm))
-        # Compute the number of groups
         num_gs = w_b // gw
         self.se_on = se_on
         self.conv0 = ConvBNLayer(
@@ -242,7 +240,6 @@ class SELayer(nn.Layer):
         super(SELayer, self).__init__()
 
         self.pool2d_gap = AdaptiveAvgPool2D(1)
-        self._num_channels = num_channels
         # timm: self.fc1 = nn.Conv2d(channels, rd_channels, 1, bias=True)
         self.conv_reduce = Conv2D(
             num_channels,
@@ -280,26 +277,15 @@ class RegNet(nn.Layer):
                  class_num=1000):
         super(RegNet, self).__init__()
 
-        # Generate RegNet ws per block
-        b_ws, num_s, max_s, ws_cont = generate_regnet(w_a, w_0, w_m, d, q)
-        # Convert to per stage format
+        b_ws, num_s, _, _ = generate_regnet(w_a, w_0, w_m, d, q)
         ws, ds = get_stages_from_blocks(b_ws, b_ws)
-        # Generate group widths and bot muls
         gws = [group_w for _ in range(num_s)]
         bms = [bot_mul for _ in range(num_s)]
-        # Adjust the compatibility of ws and gws
         ws, gws = adjust_ws_gs_comp(ws, bms, gws)
-        # Use the same stride for each stage
         ss = [2 for _ in range(num_s)]
-        # Use SE for RegNetY
         se_r = 0.25
-        # Construct the model
-        # Group params by stage
         stage_params = list(zip(ds, ws, ss, bms, gws))
-        # Construct the stem
-        stem_type = "simple_stem_in"
         stem_w = 32
-        block_type = "res_bottleneck_block"
 
         self.conv = ConvBNLayer(
             num_channels=3,
@@ -315,10 +301,8 @@ class RegNet(nn.Layer):
             shortcut = False
             for i in range(d):
                 num_channels = stem_w if block == i == 0 else in_channels
-                # Stride apply to the first block of the stage
                 b_stride = stride if i == 0 else 1
-                conv_name = "s" + str(block + 1) + "_b" + str(i +
-                                                              1)  # chr(97 + i)
+                conv_name = "s" + str(block + 1) + "_b" + str(i + 1)
                 bottleneck_block = self.add_sublayer(
                     conv_name,
                     BottleneckBlock(
@@ -336,9 +320,7 @@ class RegNet(nn.Layer):
                 shortcut = True
 
         self.pool2d_avg = AdaptiveAvgPool2D(1)
-
         self.pool2d_avg_channels = w_out
-
         stdv = 1.0 / math.sqrt(self.pool2d_avg_channels * 1.0)
 
         self.out = Linear(
