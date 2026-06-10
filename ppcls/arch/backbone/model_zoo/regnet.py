@@ -56,29 +56,29 @@ MODEL_URLS = {
     "https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/RegNetX_16GF_pretrained.pdparams",
     "RegNetX_32GF":
     "https://paddle-imagenet-models-name.bj.bcebos.com/dygraph/RegNetX_32GF_pretrained.pdparams",
-    "RegNetY_200MF":
+    "RegNetY_200":
     "",
-    "RegNetY_400MF":
+    "RegNetY_400":
     "",
-    "RegNetY_600MF":
+    "RegNetY_600":
     "",
-    "RegNetY_800MF":
+    "RegNetY_800":
     "",
-    "RegNetY_1600MF":
+    "RegNetY_1600":
     "",
-    "RegNetY_3200MF":
+    "RegNetY_3200":
     "",
-    "RegNetY_4GF":
+    "RegNetY_4000":
     "",
-    "RegNetY_6400MF":
+    "RegNetY_6400":
     "",
-    "RegNetY_8GF":
+    "RegNetY_8000":
     "",
-    "RegNetY_12GF":
+    "RegNetY_12000":
     "",
-    "RegNetY_16GF":
+    "RegNetY_16000":
     "",
-    "RegNetY_32GF":
+    "RegNetY_32000":
     "",
 }
 
@@ -536,7 +536,7 @@ def RegNetX_32GF(pretrained=False, use_ssld=False, **kwargs):
 # RegNetY models (with SE, se_on=True, se_r=0.25)
 # Original: timm model_cfgs regnety_*
 
-def RegNetY_200MF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_200(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_002=RegNetCfg(w0=24, wa=36.44, wm=2.49, group_size=8, depth=13, se_ratio=0.25)
     model = RegNet(
         w_a=36.44,
@@ -549,11 +549,11 @@ def RegNetY_200MF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_200MF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_200"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_400MF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_400(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_004=RegNetCfg(w0=48, wa=27.89, wm=2.09, group_size=8, depth=16, se_ratio=0.25)
     model = RegNet(
         w_a=27.89,
@@ -566,11 +566,11 @@ def RegNetY_400MF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_400MF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_400"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_600MF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_600(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_006=RegNetCfg(w0=48, wa=32.54, wm=2.32, group_size=16, depth=15, se_ratio=0.25)
     model = RegNet(
         w_a=32.54,
@@ -583,11 +583,11 @@ def RegNetY_600MF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_600MF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_600"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_800MF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_800(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_008=RegNetCfg(w0=56, wa=38.84, wm=2.4, group_size=16, depth=14, se_ratio=0.25)
     model = RegNet(
         w_a=38.84,
@@ -600,11 +600,11 @@ def RegNetY_800MF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_800MF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_800"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_1600MF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_1600(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_016=RegNetCfg(w0=48, wa=20.71, wm=2.65, group_size=24, depth=27, se_ratio=0.25)
     model = RegNet(
         w_a=20.71,
@@ -617,11 +617,11 @@ def RegNetY_1600MF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_1600MF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_1600"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_3200MF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_3200(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_032=RegNetCfg(w0=80, wa=42.63, wm=2.66, group_size=24, depth=21, se_ratio=0.25)
     model = RegNet(
         w_a=42.63,
@@ -634,11 +634,11 @@ def RegNetY_3200MF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_3200MF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_3200"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_4GF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_4000(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_040=RegNetCfg(w0=96, wa=31.41, wm=2.24, group_size=64, depth=22, se_ratio=0.25)
     model = RegNet(
         w_a=31.41,
@@ -651,11 +651,11 @@ def RegNetY_4GF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_4GF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_4000"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_6400MF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_6400(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_064=RegNetCfg(w0=112, wa=33.22, wm=2.27, group_size=72, depth=25, se_ratio=0.25)
     model = RegNet(
         w_a=33.22,
@@ -668,11 +668,11 @@ def RegNetY_6400MF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_6400MF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_6400"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_8GF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_8000(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_080=RegNetCfg(w0=192, wa=76.82, wm=2.19, group_size=56, depth=17, se_ratio=0.25)
     model = RegNet(
         w_a=76.82,
@@ -685,11 +685,11 @@ def RegNetY_8GF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_8GF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_8000"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_12GF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_12000(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_120=RegNetCfg(w0=168, wa=73.36, wm=2.37, group_size=112, depth=19, se_ratio=0.25)
     model = RegNet(
         w_a=73.36,
@@ -702,11 +702,11 @@ def RegNetY_12GF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_12GF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_12000"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_16GF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_16000(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_160=RegNetCfg(w0=200, wa=106.23, wm=2.48, group_size=112, depth=18, se_ratio=0.25)
     model = RegNet(
         w_a=106.23,
@@ -719,11 +719,11 @@ def RegNetY_16GF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_16GF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_16000"], use_ssld=use_ssld)
     return model
 
 
-def RegNetY_32GF(pretrained=False, use_ssld=False, **kwargs):
+def RegNetY_32000(pretrained=False, use_ssld=False, **kwargs):
     # timm: regnety_320=RegNetCfg(w0=232, wa=115.89, wm=2.53, group_size=232, depth=20, se_ratio=0.25)
     model = RegNet(
         w_a=115.89,
@@ -736,5 +736,5 @@ def RegNetY_32GF(pretrained=False, use_ssld=False, **kwargs):
         se_on=True,
         **kwargs)
     _load_pretrained(
-        pretrained, model, MODEL_URLS["RegNetY_32GF"], use_ssld=use_ssld)
+        pretrained, model, MODEL_URLS["RegNetY_32000"], use_ssld=use_ssld)
     return model

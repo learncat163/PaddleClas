@@ -28,7 +28,7 @@ AMP:
 
 # model architecture
 Arch:
-  name: RegNetY_200MF
+  name: RegNetY_32000
   class_num: 1000
 
 # loss function config for traing/eval process
