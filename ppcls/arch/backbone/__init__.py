@@ -230,8 +230,6 @@ from .model_zoo.regnet import (
     RegNetX_12GF,
     RegNetX_16GF,
     RegNetX_32GF,
-)
-from .model_zoo.regnet import (
     RegNetY_200,
     RegNetY_400,
     RegNetY_600,
