@@ -556,7 +556,6 @@ from .model_zoo.lowformer import (
     LowFormer_b0,
     LowFormer_b1,
     LowFormer_b15,
-    LowFormer_b2,
     LowFormer_b3,
     LowFormer_e1,
     LowFormer_e2,
