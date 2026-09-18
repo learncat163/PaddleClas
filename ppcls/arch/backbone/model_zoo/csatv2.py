@@ -1,7 +1,21 @@
-"""CSATv2: frequency-domain vision model with DCT stem and spatial attention.
+# copyright (c) 2026 PaddlePaddle Authors. All Rights Reserve.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Migrated from timm 1.0.29 (timm/models/csatv2.py). State dict keys match timm
-native checkpoints (csatv2.r512_in1k, csatv2_21m.sw_r512_in1k, csatv2_21m.sw_r640_in1k).
+# reference:
+# https://github.com/huggingface/pytorch-image-models/blob/main/timm/models/csatv2.py
+
+"""CSATv2: frequency-domain vision model with DCT stem and spatial attention.
 """
 
 import math
@@ -12,23 +26,24 @@ import numpy as np
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
-from paddle.nn.initializer import TruncatedNormal, Constant
 
 from ....utils.save_load import load_dygraph_pretrain
 from ..base.theseus_layer import TheseusLayer
+from .vision_transformer import DropPath, Mlp, trunc_normal_, zeros_, ones_
 
 __all__ = ['CSATv2_512', 'CSATv2_21m_512', 'CSATv2_21m_640']
 
-# kept empty until official hosting is available; use pretrained=<local .pdparams path>
 MODEL_URLS = {
-    "CSATv2_512": "",
-    "CSATv2_21m_512": "",
-    "CSATv2_21m_640": "",
+    "CSATv2_512": (
+        "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/CSATv2_512_pretrained.pdparams"
+    ),
+    "CSATv2_21m_512": (
+        "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/CSATv2_21m_512_pretrained.pdparams"
+    ),
+    "CSATv2_21m_640": (
+        "https://paddle-model-ecology.bj.bcebos.com/paddlex/official_pretrained_model/CSATv2_21m_640_pretrained.pdparams"
+    ),
 }
-
-trunc_normal_ = TruncatedNormal(std=.02)
-zeros_ = Constant(value=0.)
-ones_ = Constant(value=1.)
 
 # DCT frequency normalization statistics (Y, Cb, Cr channels x 64 coefficients)
 _DCT_MEAN = (
@@ -86,28 +101,6 @@ _DCT_VAR = (
 )
 
 
-def drop_path(x, drop_prob=0., training=False):
-    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-    if drop_prob == 0. or not training:
-        return x
-    keep_prob = 1. - drop_prob
-    shape = (x.shape[0], ) + (1, ) * (x.ndim - 1)
-    random_tensor = keep_prob + paddle.rand(shape, dtype=x.dtype)
-    random_tensor = paddle.floor(random_tensor)  # binarize
-    return (x / keep_prob) * random_tensor
-
-
-class DropPath(nn.Layer):
-    """Drop paths (Stochastic Depth) per sample (when applied in main path of residual blocks)."""
-
-    def __init__(self, drop_prob=None):
-        super(DropPath, self).__init__()
-        self.drop_prob = drop_prob
-
-    def forward(self, x):
-        return drop_path(x, self.drop_prob, self.training)
-
-
 class LayerNorm2d(nn.Layer):
     """Channel-normalizing LayerNorm for NCHW tensors, params named weight/bias to match timm."""
 
@@ -142,52 +135,6 @@ class GlobalResponseNorm(nn.Layer):
         nx = gx / (gx.mean(axis=-1, keepdim=True) + self.eps)
         return x + self.bias.reshape([1, 1, 1, -1]) + self.weight.reshape(
             [1, 1, 1, -1]) * (x * nx)
-
-
-class LayerScale(nn.Layer):
-    """LayerScale on channels-last tensors."""
-
-    def __init__(self, dim, init_values=1e-5):
-        super().__init__()
-        self.gamma = self.create_parameter(
-            shape=[dim], default_initializer=Constant(init_values))
-
-    def forward(self, x):
-        return x * self.gamma
-
-
-class LayerScale2d(nn.Layer):
-    """LayerScale on NCHW tensors."""
-
-    def __init__(self, dim, init_values=1e-5):
-        super().__init__()
-        self.gamma = self.create_parameter(
-            shape=[dim], default_initializer=Constant(init_values))
-
-    def forward(self, x):
-        return x * self.gamma.reshape([1, -1, 1, 1])
-
-
-class Mlp(nn.Layer):
-    """MLP as used in timm layers (fc1/act/drop1/fc2/drop2)."""
-
-    def __init__(self, in_features, hidden_features=None, out_features=None, drop=0.):
-        super().__init__()
-        out_features = out_features or in_features
-        hidden_features = hidden_features or in_features
-        self.fc1 = nn.Linear(in_features, hidden_features)
-        self.act = nn.GELU()
-        self.drop1 = nn.Dropout(p=drop)
-        self.fc2 = nn.Linear(hidden_features, out_features)
-        self.drop2 = nn.Dropout(p=drop)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.act(x)
-        x = self.drop1(x)
-        x = self.fc2(x)
-        x = self.drop2(x)
-        return x
 
 
 class Attention(nn.Layer):
@@ -261,7 +208,7 @@ def _zigzag_permutation(rows, cols):
     return zigzag
 
 
-def _dct_kernel_type_2(kernel_size, orthonormal=True):
+def _dct_kernel_type_2(kernel_size):
     """Standard orthonormal Type-II DCT matrix.
 
     Equals the transpose of timm's fft-built kernel (verified to 6e-08), which
@@ -270,24 +217,17 @@ def _dct_kernel_type_2(kernel_size, orthonormal=True):
     n = np.arange(kernel_size, dtype='float64')
     k = n[:, None]
     c = np.cos(np.pi * k * (2 * n[None, :] + 1) / (2 * kernel_size))
-    if orthonormal:
-        c[0] *= math.sqrt(1.0 / kernel_size)
-        c[1:] *= math.sqrt(2.0 / kernel_size)
+    c[0] *= math.sqrt(1.0 / kernel_size)
+    c[1:] *= math.sqrt(2.0 / kernel_size)
     return paddle.to_tensor(c.astype('float32'))
-
-
-def _dct_kernel_type_3(kernel_size, orthonormal=True):
-    """Type-III DCT matrix (inverse of Type-II)."""
-    return paddle.linalg.inv(_dct_kernel_type_2(kernel_size, orthonormal))
 
 
 class Dct1d(nn.Layer):
     """1D Type-II DCT along the last dim; applies x @ weights.T (torch F.linear semantics)."""
 
-    def __init__(self, kernel_size, kernel_type=2, orthonormal=True):
+    def __init__(self, kernel_size):
         super().__init__()
-        kernel = {'2': _dct_kernel_type_2, '3': _dct_kernel_type_3}[str(kernel_type)]
-        self.register_buffer('weights', kernel(kernel_size, orthonormal))
+        self.register_buffer('weights', _dct_kernel_type_2(kernel_size))
 
     def forward(self, x):
         return x @ self.weights.T
@@ -296,9 +236,9 @@ class Dct1d(nn.Layer):
 class Dct2d(nn.Layer):
     """2D DCT: 1D DCT along the last dim, then along the second-to-last dim."""
 
-    def __init__(self, kernel_size, kernel_type=2, orthonormal=True):
+    def __init__(self, kernel_size):
         super().__init__()
-        self.transform = Dct1d(kernel_size, kernel_type, orthonormal)
+        self.transform = Dct1d(kernel_size)
 
     def forward(self, x):
         perm = list(range(x.ndim))
@@ -323,10 +263,10 @@ def _split_out_chs(out_chs, ratio=(24, 4, 4)):
 class LearnableDct2d(nn.Layer):
     """Learnable 2D DCT stem with RGB to YCbCr conversion and frequency selection."""
 
-    def __init__(self, kernel_size, kernel_type=2, orthonormal=True, out_chs=32):
+    def __init__(self, kernel_size, out_chs=32):
         super().__init__()
         self.k = kernel_size
-        self.transform = Dct2d(kernel_size, kernel_type, orthonormal)
+        self.transform = Dct2d(kernel_size)
         self.permutation = _zigzag_permutation(kernel_size, kernel_size)
         y_ch, cb_ch, cr_ch = _split_out_chs(out_chs, ratio=(24, 4, 4))
         self.conv_y = nn.Conv2D(kernel_size**2, y_ch, kernel_size=1, padding=0)
@@ -446,7 +386,7 @@ class SpatialAttention(nn.Layer):
 class Block(nn.Layer):
     """ConvNeXt-style block with spatial attention gating."""
 
-    def __init__(self, dim, drop_path=0., ls_init_value=None):
+    def __init__(self, dim, drop_path=0.):
         super().__init__()
         self.dwconv = nn.Conv2D(dim, dim, kernel_size=7, padding=3, groups=dim)
         self.norm = nn.LayerNorm(dim, epsilon=1e-6)
@@ -454,7 +394,6 @@ class Block(nn.Layer):
         self.act = nn.GELU()
         self.grn = GlobalResponseNorm(4 * dim)
         self.pwconv2 = nn.Linear(4 * dim, dim)
-        self.ls = LayerScale2d(dim, init_values=ls_init_value) if ls_init_value else nn.Identity()
         self.drop_path = DropPath(drop_path) if drop_path > 0. else nn.Identity()
         self.attn = SpatialAttention()
 
@@ -473,7 +412,6 @@ class Block(nn.Layer):
         attn = F.interpolate(
             attn, size=x.shape[2:], mode='bilinear', align_corners=True)
         x = x * attn
-        x = self.ls(x)
 
         return shortcut + self.drop_path(x)
 
@@ -482,7 +420,7 @@ class TransformerBlock(nn.Layer):
     """Transformer block with optional downsampling and convolutional position encoding."""
 
     def __init__(self, inp, oup, num_heads=8, attn_head_dim=32, downsample=False,
-                 attn_drop=0., proj_drop=0., drop_path=0., ls_init_value=None):
+                 attn_drop=0., proj_drop=0., drop_path=0.):
         super().__init__()
         hidden_dim = int(inp * 4)
         self.downsample = downsample
@@ -506,12 +444,10 @@ class TransformerBlock(nn.Layer):
             dim_out=oup,
             attn_drop=attn_drop,
             proj_drop=proj_drop)
-        self.ls1 = LayerScale(oup, init_values=ls_init_value) if ls_init_value else nn.Identity()
         self.drop_path1 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
         self.norm2 = nn.LayerNorm(oup, epsilon=1e-6)
         self.mlp = Mlp(oup, hidden_dim, oup, drop=proj_drop)
-        self.ls2 = LayerScale(oup, init_values=ls_init_value) if ls_init_value else nn.Identity()
         self.drop_path2 = DropPath(drop_path) if drop_path > 0. else nn.Identity()
 
     def forward(self, x):
@@ -526,7 +462,7 @@ class TransformerBlock(nn.Layer):
         x_t = x_t.flatten(2).transpose([0, 2, 1])
         x_t = self.norm1(x_t)
         x_t = self.pos_embed(x_t, (H, W))
-        x_t = self.ls1(self.attn(x_t))
+        x_t = self.attn(x_t)
         x_t = x_t.transpose([0, 2, 1]).reshape([B, -1, H, W])
         x = shortcut + self.drop_path1(x_t)
 
@@ -534,7 +470,7 @@ class TransformerBlock(nn.Layer):
         B, C, H, W = x.shape
         shortcut = x
         x_t = x.flatten(2).transpose([0, 2, 1])
-        x_t = self.ls2(self.mlp(self.norm2(x_t)))
+        x_t = self.mlp(self.norm2(x_t))
         x_t = x_t.transpose([0, 2, 1]).reshape([B, C, H, W])
         x = shortcut + self.drop_path2(x_t)
 
@@ -576,7 +512,6 @@ class CSATv2(TheseusLayer):
                  transformer_depths=(0, 0, 2, 2),
                  drop_path_rate=0.,
                  transformer_drop_path=False,
-                 ls_init_value=None,
                  global_pool='avg'):
         super().__init__()
         if in_chans != 3:
@@ -604,11 +539,10 @@ class CSATv2(TheseusLayer):
         stages = []
         for i, (dim, depth, t_depth) in enumerate(zip(dims, depths, transformer_depths)):
             layers = ([nn.Conv2D(dims[i - 1], dim, kernel_size=2, stride=2)] if i > 0 else []) + \
-                [Block(dim=dim, drop_path=next(dp_iter), ls_init_value=ls_init_value)
+                [Block(dim=dim, drop_path=next(dp_iter))
                  for _ in range(depth - t_depth)] + \
                 [TransformerBlock(inp=dim, oup=dim,
-                                  drop_path=next(dp_iter) if transformer_drop_path else 0.,
-                                  ls_init_value=ls_init_value)
+                                  drop_path=next(dp_iter) if transformer_drop_path else 0.)
                  for _ in range(t_depth)] + \
                 ([LayerNorm2d(dim, epsilon=1e-6)] if i < len(depths) - 1 else [])
             stages.append(nn.Sequential(*layers))
